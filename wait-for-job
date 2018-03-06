@@ -1,10 +1,9 @@
 #!/bin/bash
 # Waits for a job to complete.
 #
-# Includes a two-step approach:
+# Includes a one-step approach:
 #
-# 1. Wait for the observed generation to match the specified one.
-# 2. Waits for the number of available replicas to match the specified one.
+# 1. Wait for the nr of expected completion to be equal to nr of succeeded
 #
 #
 set -o errexit
@@ -30,6 +29,10 @@ get_specified_completions() {
 
 get_succeeded() {
   get_job_jsonpath '{.status.succeeded}'
+}
+
+get_failed() {
+  get_job_jsonpath '{.status.failed}'
 }
 
 get_status_type() {
@@ -82,21 +85,21 @@ trap 'kill -- -${timeout_monitor_pid}' EXIT #Stop timeout monitor
 
 specified_completions=$(get_specified_completions); readonly specified_completions
 succeeded=$(get_succeeded)
+failed=$(get_failed)
 
 echo "Expected completions for job ${job}: ${specified_completions}"
 while [[ ${succeeded} -lt ${specified_completions} ]]; do
+  
+  if [[ ${failed} -gt ${specified_completions} ]]; then
+    echo "Observed fails: ${failed:=0}"
+    exit 1
+  fi
+  
   sleep .5
   echo "Currently observed successes: ${succeeded:=0}"
   succeeded=$(get_succeeded)
+  failed=$(get_failed)
 done
 echo "Observed expected successes: ${succeeded}"
-
-# status_type=$(get_status_type)
-# expected_status_type="Complete"
-# while [[ ${status_type} -ne ${expected_status_type} ]]; do
-#   sleep .5
-#   echo "current status type: ${status_type}, waiting"
-#   status_type=$(get_status_type)
-# done
 
 echo "Job ${job} successful. All ${specified_completions} jobs completed."
