@@ -46,7 +46,7 @@ get_job_jsonpath() {
 }
 
 get_job_logs() {
-  kubectl --namespace "${namespace}" get logs "job/${job}"
+  kubectl --namespace "${namespace}" logs "job/${job}"
 }
 
 display_usage_and_exit() {
