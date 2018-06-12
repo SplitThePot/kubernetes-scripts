@@ -45,6 +45,10 @@ get_job_jsonpath() {
   kubectl --namespace "${namespace}" get job "${job}" -o "jsonpath=${jsonpath}"
 }
 
+get_job_logs() {
+  kubectl --namespace "${namespace}" get logs "job/${job}"
+}
+
 display_usage_and_exit() {
   echo "Usage: $(basename "$0") [-n <namespace>] [-t <timeout>] <job>" >&2
   echo "Arguments:" >&2
@@ -92,6 +96,7 @@ while [[ ${succeeded} -lt ${specified_completions} ]]; do
   
   if [[ ${failed} -gt ${specified_completions} ]]; then
     echo "Observed fails: ${failed:=0}"
+    echo $(get_job_logs)
     exit 1
   fi
   
